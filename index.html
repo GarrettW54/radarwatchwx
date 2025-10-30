@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RadarWatchWX</title>
+  <style>
+    :root {
+      --bg: #0a0f1a;
+      --card: #111d2f;
+      --accent: #007bff;
+      --text: #e9eefc;
+      --nav-bg: #0d1422;
+    }
+    body {
+      margin: 0;
+      font-family: "Inter", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: linear-gradient(90deg, #0057ff, #00b6ff);
+      padding: 16px;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    #map {
+      flex: 1;
+    }
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: var(--nav-bg);
+      padding: 12px 0;
+      border-top: 1px solid #1c263a;
+      backdrop-filter: blur(10px);
+    }
+    nav button {
+      background: var(--card);
+      border: none;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    nav button:hover {
+      background: var(--accent);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      transform: translateY(-2px);
+    }
+  </style>
+  <!-- Leaflet Radar (OpenSource alternative to pro radar) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-tilelayer-wms@1.0.1/dist/leaflet-tilelayer-wms.min.js"></script>
+</head>
+<body>
+  <header>RadarWatchWX</header>
+  <div id="map"></div>
+  <nav>
+    <button onclick="setLayer('reflectivity')">Radar</button>
+    <button onclick="setLayer('satellite')">Satellite</button>
+    <button onclick="setLayer('alerts')">Warnings</button>
+    <button onclick="locateUser()">My Location</button>
+  </nav>
+
+  <script>
+    const map = L.map('map').setView([34.75, -92.27], 6); // Arkansas default
+
+    const base = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    let activeLayer;
+
+    const layers = {
+      reflectivity: L.tileLayer.wms('https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi?', {
+        layers: 'nexrad-n0q-900913', format: 'image/png', transparent: true
+      }),
+      velocity: L.tileLayer.wms('https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0v.cgi?', {
+        layers: 'nexrad-n0v-900913', format: 'image/png', transparent: true
+      }),
+      correlation: L.tileLayer.wms('https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0c.cgi?', {
+        layers: 'nexrad-n0c-900913', format: 'image/png', transparent: true
+      }),
+      satellite: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'),
+      alerts: L.tileLayer.wms('https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi?', {
+        layers: 'nexrad-n0r-900913', format: 'image/png', transparent: true
+      })
+    };
+
+    function setLayer(type) {
+      if (activeLayer) map.removeLayer(activeLayer);
+      activeLayer = layers[type];
+      map.addLayer(activeLayer);
+    }
+
+    function locateUser() {
+      if (!navigator.geolocation) return alert('Location not supported');
+      navigator.geolocation.getCurrentPosition((pos) => {
+        map.setView([pos.coords.latitude, pos.coords.longitude], 8);
+      });
+    }
+
+    setLayer('reflectivity');
+  </script>
+</body>
+</html>
